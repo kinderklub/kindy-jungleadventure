@@ -1,0 +1,2298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Jungle Adventure: Kembara Rimba (Kindy Klub Edition)</title>
+  
+  <!-- Google Fonts: Quicksand -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Three.js (r128) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    * {
+      font-family: 'Quicksand', sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* Claymorphic 3D UI styling */
+    .clay-card {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      box-shadow: 
+        0 14px 28px rgba(35, 78, 48, 0.16),
+        0 10px 10px rgba(0, 0, 0, 0.04),
+        inset 0 2px 4px rgba(255, 255, 255, 0.9),
+        inset 0 -4px 6px rgba(0, 0, 0, 0.06);
+      border-radius: 28px;
+    }
+
+    .clay-btn {
+      transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 
+        0 8px 18px rgba(0, 0, 0, 0.14),
+        inset 0 3px 2px rgba(255, 255, 255, 0.6),
+        inset 0 -4px 4px rgba(0, 0, 0, 0.15);
+    }
+    
+    .clay-btn:active {
+      transform: translateY(4px) scale(0.97);
+      box-shadow: 
+        0 3px 6px rgba(0, 0, 0, 0.1),
+        inset 0 2px 2px rgba(255, 255, 255, 0.4),
+        inset 0 -2px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    .clay-bubble {
+      box-shadow: 
+        0 6px 14px rgba(40, 90, 50, 0.12),
+        inset 0 3px 3px rgba(255, 255, 255, 0.8),
+        inset 0 -3px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Floating gently animation */
+    @keyframes gentleFloat {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-7px) rotate(1deg); }
+    }
+    
+    .floating-anim {
+      animation: gentleFloat 3.4s ease-in-out infinite;
+    }
+
+    @keyframes pulseSoft {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+
+    .pulse-anim {
+      animation: pulseSoft 2.2s ease-in-out infinite;
+    }
+
+    /* Prevent scrolling */
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      background-color: #a4e5f7;
+    }
+    
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Realistic River Stone Touch Buttons (Natural Pebble Shape & Texture) */
+    .stone-touch-btn {
+      position: relative;
+      background: radial-gradient(circle at 35% 25%, #78716c 0%, #44403c 65%, #292524 100%);
+      border: 3px solid #a8a29e;
+      border-radius: 48% 52% 46% 54% / 42% 44% 56% 58%;
+      box-shadow: 
+        0 10px 18px rgba(15, 23, 42, 0.45),
+        inset 0 4px 6px rgba(255, 255, 255, 0.4),
+        inset 0 -6px 8px rgba(0, 0, 0, 0.6);
+      transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.15s ease;
+    }
+    .stone-touch-btn::after {
+      content: '';
+      position: absolute;
+      bottom: 6px;
+      right: 12px;
+      width: 18px;
+      height: 9px;
+      background: radial-gradient(ellipse at center, rgba(34, 197, 94, 0.75) 0%, rgba(21, 128, 61, 0) 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .stone-touch-btn:hover {
+      border-color: #fef08a;
+      transform: translateY(-2px) scale(1.03);
+    }
+    .stone-touch-btn:active {
+      transform: translateY(3px) scale(0.94);
+      box-shadow: 
+        0 3px 6px rgba(15, 23, 42, 0.3),
+        inset 0 2px 3px rgba(255, 255, 255, 0.2),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.7);
+    }
+  </style>
+</head>
+
+<body class="relative flex flex-col justify-between select-none">
+  <!-- 3D Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- Ambient Sky Gradient Overlay (Soft Vignette) -->
+  <div class="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-b from-sky-400/20 via-transparent to-emerald-900/25"></div>
+
+  <!-- TOP HEADER / NAV BAR -->
+  <header class="relative z-10 w-full p-3 sm:p-5 flex justify-between items-center pointer-events-none max-w-6xl mx-auto">
+    <!-- Brand / Title Badge -->
+    <div class="pointer-events-auto flex items-center gap-2.5 bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-lg border border-white/60">
+      <!-- Custom SVG Chibi Explorer Leaf Badge (No Emoji) -->
+      <svg class="w-7 h-7 flex-shrink-0" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="20" cy="20" r="19" fill="url(#brandGrad)" />
+        <path d="M20 7C14 12 12 21 20 31C28 21 26 12 20 7Z" fill="#8CE03E" stroke="#2B7A1C" stroke-width="2"/>
+        <path d="M20 12V28" stroke="#1F6312" stroke-width="2" stroke-linecap="round"/>
+        <defs>
+          <radialGradient id="brandGrad" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#FFDD55"/>
+            <stop offset="100%" stop-color="#F39C12"/>
+          </radialGradient>
+        </defs>
+      </svg>
+      <div>
+        <span class="block text-xs font-black tracking-wider uppercase text-emerald-700">Kindy Klub</span>
+        <span class="block text-sm sm:text-base font-extrabold text-amber-900 leading-none" id="brand-title">Kembara Rimba</span>
+      </div>
+    </div>
+
+    <!-- Right Controls: Home, Audio & Language Switcher -->
+    <div class="pointer-events-auto flex items-center gap-2 sm:gap-2.5">
+      <!-- Home Button (Return to Main Menu at Any Time) -->
+      <button id="home-btn" class="clay-btn bg-white hover:bg-emerald-50 text-emerald-800 p-2 sm:px-3 sm:py-2.5 rounded-2xl flex items-center gap-1.5 font-bold text-xs sm:text-sm border border-emerald-200 shadow-sm" title="Menu Utama / Home Menu">
+        <svg class="w-5 h-5 text-emerald-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 10.5L12 3l9 7.5V20a1.5 1.5 0 0 1-1.5 1.5H15v-6a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v6H4.5A1.5 1.5 0 0 1 3 20v-9.5z" fill="#A7F3D0" stroke="#047857"/>
+        </svg>
+        <span id="home-btn-text" class="hidden sm:inline font-extrabold text-xs text-emerald-900">Menu</span>
+      </button>
+
+      <!-- Mute/Sound Toggle -->
+      <button id="sound-btn" class="clay-btn bg-white hover:bg-emerald-50 text-emerald-800 p-2.5 sm:px-3 sm:py-2.5 rounded-2xl flex items-center gap-1.5 font-bold text-xs sm:text-sm border border-emerald-200">
+        <svg id="sound-icon-on" class="w-5 h-5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+        <svg id="sound-icon-off" class="w-5 h-5 text-stone-400 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <line x1="23" y1="9" x2="17" y2="15"></line>
+          <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+      </button>
+
+      <!-- Bilingual Switch (BM / EN) - Strict No Emoji, using custom vector badges -->
+      <div class="clay-btn bg-white rounded-2xl p-1 flex items-center border border-amber-200 shadow-sm">
+        <!-- BM Button with Malaysian Flag Crest SVG -->
+        <button id="lang-bm-btn" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl font-bold text-xs sm:text-sm transition-all bg-amber-500 text-white shadow-inner">
+          <svg class="w-5 h-3.5 rounded-sm shadow-sm overflow-hidden flex-shrink-0" viewBox="0 0 28 14">
+            <rect width="28" height="14" fill="#E12228"/>
+            <rect y="2" width="28" height="2" fill="#FFFFFF"/>
+            <rect y="6" width="28" height="2" fill="#FFFFFF"/>
+            <rect y="10" width="28" height="2" fill="#FFFFFF"/>
+            <rect width="14" height="8" fill="#0E2A74"/>
+            <!-- Crescent and 14-point star stylized -->
+            <path d="M5.5 1.5A3 3 0 0 0 5.5 6.5A2.3 2.3 0 0 1 5.5 2.2Z" fill="#F8C300"/>
+            <polygon points="8,3 8.8,4.2 10.2,3.8 9.5,5.1 10.7,6 9.3,6.4 9.4,7.8 8.2,7 7.2,8 7.4,6.5 6,6.2 7.1,5.2 6.5,3.9 7.8,4.2" fill="#F8C300"/>
+          </svg>
+          <span>BM</span>
+        </button>
+
+        <!-- EN Button with UK Union Jack Crest SVG -->
+        <button id="lang-en-btn" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl font-bold text-xs sm:text-sm transition-all text-amber-900 hover:bg-amber-50">
+          <svg class="w-5 h-3.5 rounded-sm shadow-sm overflow-hidden flex-shrink-0" viewBox="0 0 28 14">
+            <rect width="28" height="14" fill="#012169"/>
+            <path d="M0 0L28 14M28 0L0 14" stroke="#FFF" stroke-width="3"/>
+            <path d="M0 0L28 14M28 0L0 14" stroke="#C8102E" stroke-width="1.8"/>
+            <path d="M14 0V14M0 7H28" stroke="#FFF" stroke-width="5"/>
+            <path d="M14 0V14M0 7H28" stroke="#C8102E" stroke-width="3"/>
+          </svg>
+          <span>EN</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 1. FRONT SCREEN MODAL / OVERLAY -->
+  <div id="front-page" class="absolute inset-0 z-20 flex items-center justify-center p-4 bg-emerald-950/30 backdrop-blur-sm transition-opacity duration-300">
+    <div class="clay-card w-full max-w-lg p-5 sm:p-7 text-center relative overflow-hidden border-4 border-amber-300">
+      
+      <!-- Decorative Jungle Canopy Corner SVGs -->
+      <div class="absolute -top-10 -left-10 w-28 h-28 pointer-events-none opacity-80">
+        <svg viewBox="0 0 100 100" fill="none"><path d="M10 0 C40 10 90 50 100 100 C50 80 20 40 10 0 Z" fill="#48BB78"/><circle cx="35" cy="40" r="14" fill="#38A169"/></svg>
+      </div>
+      <div class="absolute -top-10 -right-10 w-28 h-28 pointer-events-none opacity-80 transform scale-x-[-1]">
+        <svg viewBox="0 0 100 100" fill="none"><path d="M10 0 C40 10 90 50 100 100 C50 80 20 40 10 0 Z" fill="#48BB78"/><circle cx="35" cy="40" r="14" fill="#38A169"/></svg>
+      </div>
+
+      <!-- Front Page Language Toggle Bar (Directly accessible on the card) -->
+      <div class="relative z-10 flex justify-between items-center mb-3 bg-amber-50/80 px-3 py-1.5 rounded-2xl border border-amber-200 shadow-sm">
+        <div class="flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-amber-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <span class="text-xs font-black text-amber-900 tracking-wide" id="card-lang-label">Pilih Bahasa:</span>
+        </div>
+
+        <!-- Bilingual Switch Buttons inside Front Page -->
+        <div class="clay-btn bg-white rounded-xl p-0.5 flex items-center border border-amber-300 shadow-sm">
+          <!-- BM Button with Malaysian Flag Crest SVG -->
+          <button id="card-lang-bm-btn" class="flex items-center gap-1.5 px-3 py-1 rounded-lg font-extrabold text-xs transition-all bg-amber-500 text-white shadow-inner">
+            <svg class="w-4 h-3 rounded-sm shadow-sm overflow-hidden flex-shrink-0" viewBox="0 0 28 14">
+              <rect width="28" height="14" fill="#E12228"/>
+              <rect y="2" width="28" height="2" fill="#FFFFFF"/>
+              <rect y="6" width="28" height="2" fill="#FFFFFF"/>
+              <rect y="10" width="28" height="2" fill="#FFFFFF"/>
+              <rect width="14" height="8" fill="#0E2A74"/>
+              <path d="M5.5 1.5A3 3 0 0 0 5.5 6.5A2.3 2.3 0 0 1 5.5 2.2Z" fill="#F8C300"/>
+              <polygon points="8,3 8.8,4.2 10.2,3.8 9.5,5.1 10.7,6 9.3,6.4 9.4,7.8 8.2,7 7.2,8 7.4,6.5 6,6.2 7.1,5.2 6.5,3.9 7.8,4.2" fill="#F8C300"/>
+            </svg>
+            <span>BM</span>
+          </button>
+
+          <!-- EN Button with UK Flag Crest SVG -->
+          <button id="card-lang-en-btn" class="flex items-center gap-1.5 px-3 py-1 rounded-lg font-extrabold text-xs transition-all text-amber-900 hover:bg-amber-50">
+            <svg class="w-4 h-3 rounded-sm shadow-sm overflow-hidden flex-shrink-0" viewBox="0 0 28 14">
+              <rect width="28" height="14" fill="#012169"/>
+              <path d="M0 0L28 14M28 0L0 14" stroke="#FFF" stroke-width="3"/>
+              <path d="M0 0L28 14M28 0L0 14" stroke="#C8102E" stroke-width="1.8"/>
+              <path d="M14 0V14M0 7H28" stroke="#FFF" stroke-width="5"/>
+              <path d="M14 0V14M0 7H28" stroke="#C8102E" stroke-width="3"/>
+            </svg>
+            <span>EN</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mascot Hero Illustration: Chibi Explorer & Monkey Friend (Pure 3D SVG) -->
+      <div class="w-28 h-28 mx-auto mb-2 floating-anim relative">
+        <svg viewBox="0 0 140 140" class="w-full h-full drop-shadow-xl" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="faceGrad" cx="40%" cy="40%" r="60%">
+              <stop offset="0%" stop-color="#FFE0BD"/>
+              <stop offset="100%" stop-color="#F5B288"/>
+            </radialGradient>
+            <radialGradient id="hatGrad" cx="30%" cy="30%" r="70%">
+              <stop offset="0%" stop-color="#F6D365"/>
+              <stop offset="100%" stop-color="#D48810"/>
+            </radialGradient>
+            <radialGradient id="monkeyGrad" cx="40%" cy="40%" r="60%">
+              <stop offset="0%" stop-color="#8C5329"/>
+              <stop offset="100%" stop-color="#553014"/>
+            </radialGradient>
+          </defs>
+          
+          <!-- Chibi Explorer Body & Hat -->
+          <circle cx="68" cy="82" r="32" fill="url(#faceGrad)"/>
+          <!-- Eyes & Blushing Cheeks -->
+          <ellipse cx="58" cy="80" rx="3.5" ry="5.5" fill="#291F18"/>
+          <ellipse cx="78" cy="80" rx="3.5" ry="5.5" fill="#291F18"/>
+          <circle cx="59.5" cy="78" r="1.5" fill="#FFF"/>
+          <circle cx="79.5" cy="78" r="1.5" fill="#FFF"/>
+          <ellipse cx="52" cy="87" rx="4" ry="2.5" fill="#FF8D96" opacity="0.6"/>
+          <ellipse cx="84" cy="87" rx="4" ry="2.5" fill="#FF8D96" opacity="0.6"/>
+          <path d="M64 88 Q68 93 72 88" stroke="#7A3F1F" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          
+          <!-- Safari Explorer Pith Helmet -->
+          <path d="M38 65 Q68 40 98 65 Q104 68 98 71 Q68 64 38 71 Q32 68 38 65 Z" fill="url(#hatGrad)"/>
+          <path d="M46 62 C46 44 90 44 90 62 Z" fill="url(#hatGrad)"/>
+          <rect x="47" y="58" width="42" height="4" rx="2" fill="#2E7D32"/>
+          <circle cx="68" cy="43" r="5" fill="#C57508"/>
+          
+          <!-- Cute Monkey Buddy Peeking on Side -->
+          <g transform="translate(86, 75)">
+            <circle cx="16" cy="16" r="14" fill="url(#monkeyGrad)"/>
+            <circle cx="6" cy="12" r="4.5" fill="#D29966"/>
+            <circle cx="26" cy="12" r="4.5" fill="#D29966"/>
+            <ellipse cx="16" cy="18" rx="10" ry="8" fill="#F8CBA6"/>
+            <circle cx="12" cy="16" r="2" fill="#231709"/>
+            <circle cx="20" cy="16" r="2" fill="#231709"/>
+            <path d="M14 20 Q16 23 18 20" stroke="#78350F" stroke-width="1.8" stroke-linecap="round"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Main Game Title -->
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-amber-900 tracking-tight mb-1" id="landing-title">
+        Jungle Adventure
+      </h1>
+      <h2 class="text-base sm:text-lg font-bold text-emerald-700 mb-4" id="landing-subtitle">
+        Kembara Rimba (Kindy Klub Edition)
+      </h2>
+
+      <!-- Tier Selector Section -->
+      <div class="mb-4">
+        <p class="text-xs sm:text-sm font-bold text-stone-600 mb-2" id="label-select-tier">Pilih Tahap Umur / Select Age Tier:</p>
+        <div class="grid grid-cols-2 gap-3 max-w-sm mx-auto">
+          
+          <!-- Tier 1 Button -->
+          <button id="tier-1-btn" class="tier-card p-3 rounded-2xl border-2 border-emerald-500 bg-emerald-50/90 text-left transition-all relative overflow-hidden shadow-sm">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="w-6 h-6 rounded-full bg-emerald-500 text-white font-extrabold flex items-center justify-center text-xs">1</span>
+              <span class="font-extrabold text-xs sm:text-sm text-emerald-900" id="tier1-title">Umur 3-4</span>
+            </div>
+            <p class="text-[11px] font-semibold text-emerald-700 leading-tight" id="tier1-desc">Kira Bintik & Nombor 1-5</p>
+            <div class="absolute bottom-1 right-2 w-5 h-5 opacity-40">
+              <svg viewBox="0 0 20 20" fill="#047857"><circle cx="4" cy="10" r="3"/><circle cx="16" cy="10" r="3"/><circle cx="10" cy="5" r="3"/></svg>
+            </div>
+          </button>
+
+          <!-- Tier 2 Button -->
+          <button id="tier-2-btn" class="tier-card p-3 rounded-2xl border-2 border-stone-200 bg-white/70 text-left transition-all relative overflow-hidden shadow-sm">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="w-6 h-6 rounded-full bg-amber-500 text-white font-extrabold flex items-center justify-center text-xs">2</span>
+              <span class="font-extrabold text-xs sm:text-sm text-stone-800" id="tier2-title">Umur 5-6</span>
+            </div>
+            <p class="text-[11px] font-semibold text-stone-500 leading-tight" id="tier2-desc">Urutan Nombor & Corak</p>
+            <div class="absolute bottom-1 right-2 w-5 h-5 opacity-40">
+              <svg viewBox="0 0 24 24" fill="#D97706"><path d="M4 12h16M12 4v16" stroke="#D97706" stroke-width="4" stroke-linecap="round"/></svg>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- How to Play Card -->
+      <div class="bg-amber-100/70 border border-amber-300/80 rounded-2xl p-3 text-left mb-5">
+        <div class="flex items-center gap-2 mb-1">
+          <svg class="w-4 h-4 text-amber-700" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+          </svg>
+          <span class="text-xs font-bold text-amber-900 uppercase tracking-wider" id="how-to-play-header">Cara Bermain</span>
+        </div>
+        <p class="text-xs text-amber-950 font-medium leading-relaxed" id="how-to-play-body">
+          Bantu adik penjelajah menyeberangi sungai! Sentuh batu sungai yang mempunyai nombor jawapan yang tepat untuk mara ke tebing seberang.
+        </p>
+      </div>
+
+      <!-- Big Glossy Start Button -->
+      <button id="start-game-btn" class="w-full clay-btn pulse-anim py-3.5 sm:py-4 px-8 rounded-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-white font-extrabold text-lg sm:text-xl tracking-wider uppercase border-2 border-emerald-300 shadow-xl flex items-center justify-center gap-3">
+        <span id="start-btn-text">MULA PENGEMBARAAN</span>
+        <svg class="w-6 h-6 transform translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 3 19 12 5 21 5 3" fill="white"></polygon>
+        </svg>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- 2. GAMEPLAY HUD: SEPARATE STEP TRACKER & BIG STANDALONE QUESTION CARD WITH AI VOICE -->
+  <div id="game-hud" class="absolute top-14 sm:top-16 left-0 right-0 z-10 w-full max-w-lg mx-auto px-3 flex flex-col items-center gap-2 pointer-events-none transition-all duration-300 opacity-0">
+    
+    <!-- Top Row: Separate Step Counter Pill -->
+    <div class="pointer-events-auto clay-bubble bg-white/95 backdrop-blur-md px-3.5 py-1 rounded-full border border-amber-300 shadow-md flex items-center gap-2">
+      <span class="text-[11px] sm:text-xs font-black text-amber-900 uppercase tracking-wider" id="hud-progress-label">Langkah:</span>
+      <div id="progress-dots" class="flex items-center gap-1.5">
+        <!-- Steps Generated via JS -->
+      </div>
+    </div>
+
+    <!-- Main Row: Big, High-Contrast Question Card with AI Voice Speaker Button -->
+    <div class="w-full clay-card px-4 py-2 sm:py-2.5 border-2 border-amber-400 bg-white/95 backdrop-blur-md pointer-events-auto shadow-xl flex items-center justify-between gap-3 rounded-2xl">
+      <!-- AI Voice Button -->
+      <button id="voice-speak-btn" class="clay-btn flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-white flex items-center justify-center border-2 border-amber-200 shadow hover:scale-105 active:scale-95 transition-transform" title="Dengar Suara AI / Listen to AI Voice">
+        <svg id="voice-icon" class="w-5 h-5 sm:w-6 sm:h-6 text-white drop-shadow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"></polygon>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+        </svg>
+      </button>
+
+      <!-- Center: Big Question Prompt & Counting Visuals -->
+      <div class="flex-grow flex items-center justify-center gap-2.5 flex-wrap sm:flex-nowrap overflow-hidden">
+        <h2 id="question-prompt" class="text-base sm:text-xl md:text-2xl font-black text-amber-950 tracking-tight leading-none text-center">
+          Pilih nombor: <span class="text-emerald-700 font-extrabold text-xl sm:text-2xl">2</span>
+        </h2>
+        <div id="question-visual" class="flex items-center gap-1.5 flex-shrink-0">
+          <!-- Dynamic large leaf dots or math badges -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Feedback Toast: Repositioned above stone buttons so it never covers the monkeys -->
+  <div id="feedback-toast" class="absolute bottom-24 sm:bottom-28 left-1/2 -translate-x-1/2 z-20 px-4 py-1.5 rounded-full font-black text-xs sm:text-sm text-white shadow-xl transition-all duration-300 opacity-0 transform translate-y-2 pointer-events-none whitespace-nowrap">
+    Hebat! Teruskan!
+  </div>
+
+  <!-- Direct Touch Bar for Stepping Stones: Anchored directly at the lower river edge -->
+  <div id="stone-touch-bar" class="absolute bottom-6 sm:bottom-8 left-0 right-0 z-10 w-full max-w-sm mx-auto px-4 pointer-events-none flex justify-center items-center gap-3 sm:gap-4 transition-all duration-300 opacity-0">
+    <!-- Realistic River Rock Style Buttons -->
+    <button data-index="0" class="stone-touch-btn pointer-events-auto flex-1 py-2 sm:py-2.5 px-2 text-amber-100 font-black text-xl sm:text-2xl flex flex-col items-center justify-center">
+      <span class="stone-val leading-none drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] text-amber-200">1</span>
+      <span class="text-[9px] sm:text-[10px] uppercase font-bold text-stone-300 tracking-wider mt-0.5 opacity-90 drop-shadow">Batu A</span>
+    </button>
+    <button data-index="1" class="stone-touch-btn pointer-events-auto flex-1 py-2 sm:py-2.5 px-2 text-amber-100 font-black text-xl sm:text-2xl flex flex-col items-center justify-center">
+      <span class="stone-val leading-none drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] text-amber-200">2</span>
+      <span class="text-[9px] sm:text-[10px] uppercase font-bold text-stone-300 tracking-wider mt-0.5 opacity-90 drop-shadow">Batu B</span>
+    </button>
+    <button data-index="2" class="stone-touch-btn pointer-events-auto flex-1 py-2 sm:py-2.5 px-2 text-amber-100 font-black text-xl sm:text-2xl flex flex-col items-center justify-center">
+      <span class="stone-val leading-none drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] text-amber-200">3</span>
+      <span class="text-[9px] sm:text-[10px] uppercase font-bold text-stone-300 tracking-wider mt-0.5 opacity-90 drop-shadow">Batu C</span>
+    </button>
+  </div>
+
+  <!-- 3. VICTORY CELEBRATION MODAL -->
+  <div id="victory-modal" class="absolute inset-0 z-30 flex items-center justify-center p-4 bg-emerald-950/40 backdrop-blur-md hidden transition-opacity duration-300 opacity-0">
+    <div class="clay-card w-full max-w-md p-6 sm:p-8 text-center relative border-4 border-amber-300 shadow-2xl">
+      
+      <!-- Trophy Badge with Monkey Buddy (SVG, No Emoji) -->
+      <div class="w-28 h-28 mx-auto mb-2 floating-anim">
+        <svg viewBox="0 0 120 120" class="w-full h-full drop-shadow-xl" fill="none">
+          <circle cx="60" cy="60" r="54" fill="#FFDA44" stroke="#F59E0B" stroke-width="4"/>
+          <!-- Star Trophy -->
+          <path d="M60 25 L68 45 L90 47 L73 62 L78 84 L60 72 L42 84 L47 62 L30 47 L52 45 Z" fill="#F59E0B" stroke="#B45309" stroke-width="2"/>
+          <path d="M60 32 L66 48 L83 50 L70 61 L74 78 L60 69 L46 78 L50 61 L37 50 L54 48 Z" fill="#FDE047"/>
+          <!-- Confetti Sparks -->
+          <circle cx="25" cy="30" r="4" fill="#10B981"/>
+          <circle cx="95" cy="30" r="5" fill="#3B82F6"/>
+          <circle cx="20" cy="85" r="4.5" fill="#EC4899"/>
+          <circle cx="100" cy="80" r="4" fill="#8B5CF6"/>
+        </svg>
+      </div>
+
+      <h2 class="text-2xl sm:text-3xl font-black text-amber-900 mb-1" id="victory-title">Tahniah! Anda Berjaya!</h2>
+      <p class="text-sm sm:text-base font-semibold text-emerald-800 mb-6" id="victory-desc">
+        Adik penjelajah selamat menyeberangi Sungai Rimba bersama kawan-kawan monyet!
+      </p>
+
+      <!-- Star Rating Visual (Pure Vector Stars) -->
+      <div class="flex justify-center gap-3 mb-6">
+        <svg class="w-10 h-10 text-amber-400 drop-shadow" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <svg class="w-12 h-12 text-amber-400 drop-shadow transform -translate-y-2" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <svg class="w-10 h-10 text-amber-400 drop-shadow" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </div>
+
+      <div class="flex flex-col gap-2.5">
+        <button id="play-again-btn" class="w-full clay-btn py-3.5 px-6 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-base uppercase tracking-wider border-2 border-emerald-300 shadow-md">
+          <span id="play-again-text">Main Lagi / Play Again</span>
+        </button>
+        <button id="change-tier-btn" class="w-full py-2.5 px-4 rounded-xl text-stone-600 font-bold text-xs uppercase hover:bg-stone-100 transition-colors">
+          <span id="change-tier-text">Tukar Tahap / Change Tier</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERMANENT MANDATORY FOOTER (Directly over game screen, no white tab background) -->
+  <footer class="relative z-10 w-full py-1.5 px-4 text-center pointer-events-none">
+    <p class="text-[11px] sm:text-xs font-black text-amber-950 tracking-wide drop-shadow-[0_1px_2px_rgba(255,255,255,0.85)]">
+      Made by Kindy Klub | © All Rights Reserved
+    </p>
+  </footer>
+
+  <!-- ========================================== -->
+  <!-- JAVASCRIPT GAME LOGIC, AUDIO & 3D DIORAMA -->
+  <!-- ========================================== -->
+  <script>
+  const I18N = {
+    bm: {
+      brandTitle: "Kembara Rimba",
+      landingTitle: "Kembara Rimba",
+      landingSubtitle: "Kembara Rimba (Edisi Kindy Klub)",
+      cardLangLabel: "Pilih Bahasa:",
+      selectTier: "Pilih Tahap Umur:",
+      tier1Title: "Umur 3-4",
+      tier1Desc: "Kira Bintik & Nombor 1-5",
+      tier2Title: "Umur 5-6",
+      tier2Desc: "Urutan Nombor & Corak",
+      howToHeader: "Cara Bermain",
+      howToBody: "Bantu adik penjelajah menyeberangi sungai! Sentuh batu sungai yang mempunyai nombor jawapan yang tepat untuk mara ke tebing seberang.",
+      startBtn: "MULA PENGEMBARAAN",
+      hudStep: "Langkah:",
+      qHeader: "Soalan",
+      stonePrefix: "Batu",
+      homeBtn: "Menu",
+      listenVoice: "Dengar Suara AI",
+      correctToast: ["Hebat sekali!", "Syabas!", "Lompatan Pintar!", "Terbaik! Tepat sekali!"],
+      wrongToast: ["Cuba lagi ya!", "Hampir betul!", "Pilih batu yang lain!"],
+      victoryTitle: "Tahniah! Anda Berjaya!",
+      victoryDesc: "Adik penjelajah selamat menyeberangi Sungai Rimba bersama kawan-kawan monyet!",
+      playAgain: "MAIN LAGI",
+      changeTier: "TUKAR TAHAP / MENU UTAMA",
+      // Big, high-contrast prompt templates
+      promptCountDots: (n) => `Pilih nombor: <span class="text-emerald-700 text-2xl sm:text-3xl font-black">${n}</span>`,
+      promptNextNumber: (seq) => `Nombor seterusnya: <span class="text-amber-800 text-lg sm:text-xl font-black">${seq}, [ ? ]</span>`,
+      promptSum: (a, b) => `<span class="text-stone-800 font-black">${a} + ${b} = [ ? ]</span>`,
+    },
+    en: {
+      brandTitle: "Jungle Adventure",
+      landingTitle: "Jungle Adventure",
+      landingSubtitle: "Jungle Adventure (Kindy Klub Edition)",
+      cardLangLabel: "Select Language:",
+      selectTier: "Select Age Tier:",
+      tier1Title: "Ages 3-4",
+      tier1Desc: "Count Dots & Numbers 1-5",
+      tier2Title: "Ages 5-6",
+      tier2Desc: "Number Sequences & Patterns",
+      howToHeader: "How to Play",
+      howToBody: "Help the chibi explorer cross the river! Tap the river stone with the correct answer to make safe leaps to the opposite riverbank.",
+      startBtn: "START ADVENTURE",
+      hudStep: "Step:",
+      qHeader: "Question",
+      stonePrefix: "Stone",
+      homeBtn: "Home",
+      listenVoice: "Listen to AI Voice",
+      correctToast: ["Awesome!", "Great Job!", "Super Leap!", "Spot On! Fantastic!"],
+      wrongToast: ["Try again!", "Almost got it!", "Try another stone!"],
+      victoryTitle: "Hooray! You Did It!",
+      victoryDesc: "The chibi explorer safely crossed the jungle river to celebrate with the cheerful monkeys!",
+      playAgain: "PLAY AGAIN",
+      changeTier: "CHANGE TIER / MAIN MENU",
+      // Big, high-contrast prompt templates
+      promptCountDots: (n) => `Pick number: <span class="text-emerald-700 text-2xl sm:text-3xl font-black">${n}</span>`,
+      promptNextNumber: (seq) => `Next number: <span class="text-amber-800 text-lg sm:text-xl font-black">${seq}, [ ? ]</span>`,
+      promptSum: (a, b) => `<span class="text-stone-800 font-black">${a} + ${b} = [ ? ]</span>`,
+    }
+  };
+
+  const state = {
+    lang: 'bm',
+    tier: 1, // 1: Ages 3-4, 2: Ages 5-6
+    soundEnabled: true,
+    stepIndex: 0,
+    totalSteps: 4,
+    currentQuestion: null,
+    isAnimatingJump: false,
+    gameOver: false
+  };
+
+  // Pure Procedural Web Audio API Synthesizer (No external asset files needed)
+  class SoundSynth {
+    constructor() {
+      this.ctx = null;
+    }
+
+    init() {
+      if (!this.ctx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioCtx();
+      }
+      if (this.ctx.state === 'suspended') {
+        this.ctx.resume();
+      }
+    }
+
+    playChime(freq = 523.25, duration = 0.3) {
+      if (!state.soundEnabled) return;
+      this.init();
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.5, now + duration);
+
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + duration);
+    }
+
+    playWaterSplash() {
+      if (!state.soundEnabled) return;
+      this.init();
+      const now = this.ctx.currentTime;
+      
+      // Filtered noise for water splash
+      const bufferSize = this.ctx.sampleRate * 0.4;
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
+      }
+
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(800, now);
+      filter.frequency.linearRampToValueAtTime(200, now + 0.35);
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.4, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      noise.start(now);
+    }
+
+    playBoing() {
+      if (!state.soundEnabled) return;
+      this.init();
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(140, now);
+      osc.frequency.linearRampToValueAtTime(320, now + 0.1);
+      osc.frequency.linearRampToValueAtTime(160, now + 0.25);
+
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.28);
+    }
+
+    playMonkeyCheer() {
+      if (!state.soundEnabled) return;
+      this.init();
+      const now = this.ctx.currentTime;
+      // Sequence of rapid playful chirps
+      const pitches = [550, 780, 620, 920, 850];
+      pitches.forEach((p, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const t = now + idx * 0.08;
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(p, t);
+        osc.frequency.exponentialRampToValueAtTime(p * 1.3, t + 0.07);
+
+        gain.gain.setValueAtTime(0.25, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(t);
+        osc.stop(t + 0.07);
+      });
+    }
+
+    playVictoryFanfare() {
+      if (!state.soundEnabled) return;
+      this.init();
+      const now = this.ctx.currentTime;
+      const notes = [
+        { f: 392.00, d: 0.15 }, // G4
+        { f: 523.25, d: 0.15 }, // C5
+        { f: 659.25, d: 0.15 }, // E5
+        { f: 783.99, d: 0.35 }, // G5
+        { f: 659.25, d: 0.15 }, // E5
+        { f: 783.99, d: 0.60 }  // G5 long
+      ];
+
+      let elapsed = 0;
+      notes.forEach((n) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const t = now + elapsed;
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(n.f, t);
+
+        gain.gain.setValueAtTime(0.35, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + n.d);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(t);
+        osc.stop(t + n.d);
+        elapsed += n.d * 0.85;
+      });
+    }
+  }
+
+  const audio = new SoundSynth();
+
+  let scene, camera, renderer, raycaster, mouse;
+  let riverMesh, explorerMesh, monkeyMeshes = [];
+  let stones3D = []; // Floating interactive stones
+  let leavesParticles = [];
+  let swimmingFishList = [];
+
+  function initThreeScene() {
+    const container = document.getElementById('canvas-container');
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xbfeeff); // Pastel clay sky
+    scene.fog = new THREE.FogExp2(0xbfeeff, 0.024);
+
+    camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    // Apply adaptive camera framing right from start
+    updateCameraFraming();
+
+    raycaster = new THREE.Raycaster();
+    mouse = new THREE.Vector2();
+
+    // Pastel Clay Diorama Lighting
+    const hemiLight = new THREE.HemisphereLight(0xfff6db, 0x5a9143, 0.9);
+    scene.add(hemiLight);
+
+    const dirLight = new THREE.DirectionalLight(0xfff5dd, 1.1);
+    dirLight.position.set(8, 16, 10);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 1024;
+    dirLight.shadow.mapSize.height = 1024;
+    dirLight.shadow.camera.near = 1;
+    dirLight.shadow.camera.far = 40;
+    dirLight.shadow.camera.left = -12;
+    dirLight.shadow.camera.right = 12;
+    dirLight.shadow.camera.top = 12;
+    dirLight.shadow.camera.bottom = -12;
+    dirLight.shadow.bias = -0.001;
+    scene.add(dirLight);
+
+    const ambientFill = new THREE.AmbientLight(0xd9f3ff, 0.4);
+    scene.add(ambientFill);
+
+    buildDioramaEnvironment();
+    buildChibiExplorer();
+    buildCheeringMonkeys();
+    createSteppingStones3D();
+    buildSwimmingFish();
+
+    // Event listeners
+    window.addEventListener('resize', onWindowResize, false);
+    renderer.domElement.addEventListener('pointerdown', onCanvasPointerDown, false);
+  }
+
+  function buildDioramaEnvironment() {
+    // Base Riverbed Ground
+    const riverbedGeo = new THREE.PlaneGeometry(30, 24, 16, 16);
+    const riverbedMat = new THREE.MeshLambertMaterial({ color: 0x2e6648 });
+    const riverbed = new THREE.Mesh(riverbedGeo, riverbedMat);
+    riverbed.rotation.x = -Math.PI / 2;
+    riverbed.position.y = -1.2;
+    riverbed.receiveShadow = true;
+    scene.add(riverbed);
+
+    // River Water Plane: extended depth to flow down naturally toward bottom dock
+    const riverGeo = new THREE.BoxGeometry(26, 0.8, 9.2);
+    const riverMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      roughness: 0.1,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.78
+    });
+    riverMesh = new THREE.Mesh(riverGeo, riverMat);
+    riverMesh.position.set(0, -0.4, -0.3);
+    riverMesh.receiveShadow = true;
+    scene.add(riverMesh);
+
+    // Near Riverbank (South, Z = +4.8) - meets lower viewport cleanly
+    createRiverBank(0, 4.8, 0x4ade80, 0x3d702d);
+    // Far Riverbank (North, Z = -5.2) - fully visible below top HUD
+    createRiverBank(0, -5.2, 0x4ade80, 0x3d702d);
+
+    // 6 Pokok Rimba: 1 Pokok 1 Jenis Buah
+    createToyTree(-8, 5.2, 1.4, 0x22c55e, 'apple');       // Pokok Epal Merah
+    createToyTree(7.5, 5.5, 1.6, 0x16a34a, 'orange');      // Pokok Buah Oren
+    createToyTree(-8.5, -5.5, 1.5, 0x15803d, 'mango');     // Pokok Mangga Emas
+    createToyTree(8, -6.0, 1.8, 0x22c55e, 'mangosteen');   // Pokok Manggis Ungu
+    ambientFill = new THREE.AmbientLight(0xd9f3ff, 0.4);
+    scene.add(ambientFill);
+
+    buildDioramaEnvironment();
+    buildChibiExplorer();
+    buildCheeringMonkeys();
+    createSteppingStones3D();
+    buildSwimmingFish();
+
+    // Event listeners
+    window.addEventListener('resize', onWindowResize, false);
+    renderer.domElement.addEventListener('pointerdown', onCanvasPointerDown, false);
+  }
+
+  function buildDioramaEnvironment() {
+    // Base Riverbed Ground: Warm rich brown earth
+    const riverbedGeo = new THREE.PlaneGeometry(32, 26, 16, 16);
+    const riverbedMat = new THREE.MeshLambertMaterial({ color: 0x5a381e });
+    const riverbed = new THREE.Mesh(riverbedGeo, riverbedMat);
+    riverbed.rotation.x = -Math.PI / 2;
+    riverbed.position.y = -1.2;
+    riverbed.receiveShadow = true;
+    scene.add(riverbed);
+
+    // River Water Plane: Crisp vibrant light blue
+    const riverGeo = new THREE.BoxGeometry(28, 0.8, 9.4);
+    const riverMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8, // Radiant light blue
+      roughness: 0.08,
+      metalness: 0.08,
+      transparent: true,
+      opacity: 0.84
+    });
+    riverMesh = new THREE.Mesh(riverGeo, riverMat);
+    riverMesh.position.set(0, -0.4, -0.3);
+    riverMesh.receiveShadow = true;
+    scene.add(riverMesh);
+
+    // Near Riverbank (South, Z = +4.8) - Rich dark green grass + warm brown soil
+    createRiverBank(0, 4.8, 0x14532d, 0x653b1b);
+    // Far Riverbank (North, Z = -5.2) - Rich dark green grass + warm brown soil
+    createRiverBank(0, -5.2, 0x14532d, 0x653b1b);
+
+    // 6 Pokok Rimba: Dark Green Foliage with High-Contrast Fruits
+    createToyTree(-8, 5.2, 1.4, 0x14532d, 'apple');       // Pokok Epal Merah (Dark Green)
+    createToyTree(7.5, 5.5, 1.6, 0x166534, 'orange');      // Pokok Buah Oren (Forest Dark Green)
+    createToyTree(-8.5, -5.5, 1.5, 0x0f5132, 'mango');     // Pokok Mangga Emas (Deep Pine Green)
+    createToyTree(8, -6.0, 1.8, 0x14532d, 'mangosteen');   // Pokok Manggis Ungu (Dark Emerald Green)
+    createToyTree(-4.8, -6.2, 1.3, 0x15803d, 'coconut');   // Pokok Kelapa Rimba (Dark Jungle Green)
+    createToyTree(4.8, -6.2, 1.2, 0x166534, 'cherry');     // Pokok Ceri Merah (Forest Dark Green)
+
+    // Riverbank Rocks (Smooth pebbles)
+    createSmoothPebble(-4.5, -0.1, 2.5, 0.7, 0x85786a);
+    createSmoothPebble(5.2, -0.1, 2.7, 0.9, 0xa39b8e);
+    createSmoothPebble(-5.8, -0.1, -2.4, 0.8, 0x85786a);
+    createSmoothPebble(4.8, -0.1, -2.6, 0.6, 0xa39b8e);
+
+    // Floating Lilypads in playable zone
+    createLilypad(-3.2, 0.05, 0.8);
+    createLilypad(3.6, 0.05, -0.5);
+    createLilypad(-2.0, 0.05, 3.0);
+  }
+
+  function createRiverBank(x, z, grassColor, soilColor) {
+    const bankGroup = new THREE.Group();
+    // Warm Brown Soil layer
+    const soilGeo = new THREE.BoxGeometry(28, 1.4, 4.2);
+    const soilMat = new THREE.MeshLambertMaterial({ color: soilColor });
+    const soil = new THREE.Mesh(soilGeo, soilMat);
+    soil.position.set(0, -0.5, 0);
+    soil.receiveShadow = true;
+    bankGroup.add(soil);
+
+    // Lush Dark Green Grass Top
+    const grassGeo = new THREE.BoxGeometry(28.2, 0.6, 4.3);
+    const grassMat = new THREE.MeshLambertMaterial({ color: grassColor });
+    const grass = new THREE.Mesh(grassGeo, grassMat);
+    grass.position.set(0, 0.2, 0);
+    grass.receiveShadow = true;
+    grass.castShadow = true;
+    bankGroup.add(grass);
+
+    bankGroup.position.set(x, 0, z);
+    scene.add(bankGroup);
+  }
+
+  function createToyTree(x, z, scale, colorHex, fruitType) {
+    const treeGroup = new THREE.Group();
+    
+    // Warm dark brown trunk
+    const trunkGeo = new THREE.CylinderGeometry(0.3, 0.45, 1.8, 12);
+    const trunkMat = new THREE.MeshLambertMaterial({ color: 0x5c3317 });
+    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+    trunk.position.y = 0.9;
+    trunk.castShadow = true;
+    treeGroup.add(trunk);
+
+    // Foliage: Smooth overlapping clay spheres in rich dark green
+    const foliageMat = new THREE.MeshStandardMaterial({
+      color: colorHex,
+      roughness: 0.5,
+      metalness: 0.05
+    });
+
+    const sphereMain = new THREE.Mesh(new THREE.SphereGeometry(1.2, 16, 16), foliageMat);
+    sphereMain.position.y = 2.2;
+    sphereMain.castShadow = true;
+    treeGroup.add(sphereMain);
+
+    const sphereTop = new THREE.Mesh(new THREE.SphereGeometry(0.9, 14, 14), foliageMat);
+    sphereTop.position.set(0.1, 3.1, 0);
+    sphereTop.castShadow = true;
+    treeGroup.add(sphereTop);
+
+    // Attach procedural 3D fruits across the canopy
+    attachFruitsToTree(treeGroup, fruitType);
+
+    treeGroup.position.set(x, 0, z);
+    treeGroup.scale.set(scale, scale, scale);
+    scene.add(treeGroup);
+  }
+
+  function attachFruitsToTree(treeGroup, fruitType) {
+    // Angles and elevations around tree crown facing front & sides
+    const fruitPositions = [
+      { r: 1.25, angle: 0.15, y: 2.15 },
+      { r: 1.18, angle: 0.95, y: 2.45 },
+      { r: 1.22, angle: -0.75, y: 2.05 },
+      { r: 1.15, angle: 1.65, y: 1.95 },
+      { r: 1.12, angle: -1.55, y: 2.35 },
+      { r: 0.95, angle: 0.45, y: 3.15 },
+      { r: 0.92, angle: -0.55, y: 3.05 }
+    ];
+
+    fruitPositions.forEach((pos, idx) => {
+      const fruitMesh = createFruitModel(fruitType, idx);
+      if (!fruitMesh) return;
+
+      const fx = Math.sin(pos.angle) * pos.r;
+      const fz = Math.cos(pos.angle) * pos.r;
+      
+      fruitMesh.position.set(fx, pos.y, fz);
+      // Orient fruit naturally slightly facing outwards
+      fruitMesh.rotation.y = pos.angle;
+      treeGroup.add(fruitMesh);
+    });
+  }
+
+  function createFruitModel(type, seed = 0) {
+    const fruit = new THREE.Group();
+
+    switch (type) {
+      case 'apple': {
+        // Epal Merah: Glossy red clay sphere with brown twig and tiny green leaf
+        const appleMat = new THREE.MeshStandardMaterial({
+          color: 0xef4444,
+          roughness: 0.28,
+          metalness: 0.12
+        });
+        const appleGeo = new THREE.SphereGeometry(0.24, 12, 10);
+        appleGeo.scale(1.0, 0.92, 1.0);
+        const apple = new THREE.Mesh(appleGeo, appleMat);
+        apple.castShadow = true;
+        fruit.add(apple);
+
+        // Brown stem
+        const stemMat = new THREE.MeshLambertMaterial({ color: 0x5b3a1d });
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, 0.14, 6), stemMat);
+        stem.position.set(0, 0.22, 0);
+        stem.rotation.z = 0.2;
+        fruit.add(stem);
+
+        // Leaf
+        const leafMat = new THREE.MeshLambertMaterial({ color: 0x22c55e });
+        const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.16, 5), leafMat);
+        leaf.position.set(0.06, 0.24, 0);
+        leaf.rotation.z = -1.1;
+        fruit.add(leaf);
+        break;
+      }
+
+      case 'orange': {
+        // Oren Manis: Textured bright orange sphere with green stem calyx
+        const orangeMat = new THREE.MeshStandardMaterial({
+          color: 0xf97316,
+          roughness: 0.5,
+          metalness: 0.05
+        });
+        const orange = new THREE.Mesh(new THREE.SphereGeometry(0.23, 12, 12), orangeMat);
+        orange.castShadow = true;
+        fruit.add(orange);
+
+        // Calyx star on top
+        const calyxMat = new THREE.MeshLambertMaterial({ color: 0x15803d });
+        const calyx = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.03, 0.03, 5), calyxMat);
+        calyx.position.set(0, 0.22, 0);
+        fruit.add(calyx);
+
+        const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.12, 4), calyxMat);
+        leaf.position.set(0.05, 0.24, 0);
+        leaf.rotation.z = -0.9;
+        fruit.add(leaf);
+        break;
+      }
+
+      case 'mango': {
+        // Mangga Emas: Teardrop golden mango with gentle curve
+        const mangoMat = new THREE.MeshStandardMaterial({
+          color: 0xf59e0b,
+          roughness: 0.35,
+          metalness: 0.08
+        });
+        const mangoGeo = new THREE.SphereGeometry(0.22, 12, 10);
+        mangoGeo.scale(0.85, 1.3, 0.75);
+        const mango = new THREE.Mesh(mangoGeo, mangoMat);
+        mango.rotation.z = 0.25;
+        mango.castShadow = true;
+        fruit.add(mango);
+
+        // Stem
+        const stemMat = new THREE.MeshLambertMaterial({ color: 0x78350f });
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.12, 5), stemMat);
+        stem.position.set(-0.04, 0.26, 0);
+        stem.rotation.z = 0.15;
+        fruit.add(stem);
+        break;
+      }
+
+      case 'mangosteen': {
+        // Manggis Ungu: Deep purple clay sphere with 4-lobed leafy green crown
+        const mangosteenMat = new THREE.MeshStandardMaterial({
+          color: 0x581c87,
+          roughness: 0.32,
+          metalness: 0.1
+        });
+        const mangosteen = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 10), mangosteenMat);
+        mangosteen.castShadow = true;
+        fruit.add(mangosteen);
+
+        // 4 Green Calyx Lobes
+        const sepalMat = new THREE.MeshLambertMaterial({ color: 0x16a34a });
+        for (let s = 0; s < 4; s++) {
+          const sepal = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 6), sepalMat);
+          sepal.scale.set(1.2, 0.4, 0.8);
+          const angle = (s * Math.PI) / 2;
+          sepal.position.set(Math.cos(angle) * 0.11, 0.21, Math.sin(angle) * 0.11);
+          sepal.rotation.y = angle;
+          fruit.add(sepal);
+        }
+
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.1, 5), sepalMat);
+        stem.position.set(0, 0.27, 0);
+        fruit.add(stem);
+        break;
+      }
+
+      case 'coconut': {
+        // Kelapa Rimba: Plump coconut cluster with fibrous brown/olive clay tone
+        const coconutMat = new THREE.MeshStandardMaterial({
+          color: 0x713f12,
+          roughness: 0.85,
+          metalness: 0.02
+        });
+        const coconutGeo = new THREE.SphereGeometry(0.28, 10, 8);
+        coconutGeo.scale(0.9, 1.25, 0.9);
+        const coconut = new THREE.Mesh(coconutGeo, coconutMat);
+        coconut.castShadow = true;
+        fruit.add(coconut);
+
+        // Coconut crown / attachment point
+        const crownMat = new THREE.MeshLambertMaterial({ color: 0x451a03 });
+        const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 0.05, 6), crownMat);
+        crown.position.set(0, 0.31, 0);
+        fruit.add(crown);
+        break;
+      }
+
+      case 'cherry': {
+        // Ceri Merah: Glossy paired red cherries with joined green stalks
+        const cherryMat = new THREE.MeshStandardMaterial({
+          color: 0xdc2626,
+          roughness: 0.15,
+          metalness: 0.18
+        });
+        const c1 = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 10), cherryMat);
+        c1.position.set(-0.11, -0.05, 0);
+        c1.castShadow = true;
+        fruit.add(c1);
+
+        const c2 = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 10), cherryMat);
+        c2.position.set(0.12, 0.02, 0.04);
+        c2.castShadow = true;
+        fruit.add(c2);
+
+        // Twin joined stems
+        const stemMat = new THREE.MeshLambertMaterial({ color: 0x4ade80 });
+        const s1 = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.28, 4), stemMat);
+        s1.position.set(-0.05, 0.12, 0);
+        s1.rotation.z = -0.35;
+        fruit.add(s1);
+
+        const s2 = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.26, 4), stemMat);
+        s2.position.set(0.06, 0.14, 0.02);
+        s2.rotation.z = 0.42;
+        fruit.add(s2);
+        break;
+      }
+    }
+
+    return fruit;
+  }
+
+  function createSmoothPebble(x, y, z, r, colorHex) {
+    const geo = new THREE.SphereGeometry(r, 12, 10);
+    geo.scale(1.2, 0.5, 1.0);
+    const mat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.8 });
+    const rock = new THREE.Mesh(geo, mat);
+    rock.position.set(x, y, z);
+    rock.castShadow = true;
+    rock.receiveShadow = true;
+    scene.add(rock);
+  }
+
+  function createLilypad(x, y, z) {
+    const padGeo = new THREE.CylinderGeometry(0.65, 0.65, 0.04, 16);
+    const padMat = new THREE.MeshLambertMaterial({ color: 0x22c55e });
+    const pad = new THREE.Mesh(padGeo, padMat);
+    pad.position.set(x, y, z);
+    scene.add(pad);
+  }
+
+  function buildSwimmingFish() {
+    // Array of vibrant tropical & koi fish color palettes
+    const fishColors = [
+      { body: 0xff5722, fin: 0xffedd5, belly: 0xffffff }, // Radiant Koi Orange
+      { body: 0xfacc15, fin: 0xfef08a, belly: 0xffffff }, // Golden Sunshine Fish
+      { body: 0x06b6d4, fin: 0xa5f3fc, belly: 0xffffff }, // Cyan Jungle River Fish
+      { body: 0xec4899, fin: 0xfbcfe8, belly: 0xffffff }, // Tropical Dragon Pink
+      { body: 0x10b981, fin: 0xa7f3d0, belly: 0xffffff }, // Emerald Green Molly
+      { body: 0x8b5cf6, fin: 0xddd6fe, belly: 0xffffff }, // Royal Violet Guppy
+      { body: 0xf97316, fin: 0xffedd5, belly: 0xffffff }, // Tiger Koi
+      { body: 0x0ea5e9, fin: 0xbae6fd, belly: 0xffffff }  // Blue Betta
+    ];
+
+    swimmingFishList = [];
+
+    // Spawn 14 animated fish distributed across the river
+    const numFish = 14;
+    for (let i = 0; i < numFish; i++) {
+      const fishGroup = new THREE.Group();
+      const palette = fishColors[i % fishColors.length];
+
+      // Material with soft subsurface clay shine
+      const bodyMat = new THREE.MeshStandardMaterial({
+        color: palette.body,
+        roughness: 0.35,
+        metalness: 0.15
+      });
+      const finMat = new THREE.MeshStandardMaterial({
+        color: palette.fin,
+        roughness: 0.3,
+        transparent: true,
+        opacity: 0.88,
+        side: THREE.DoubleSide
+      });
+      const eyeWhiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const pupilMat = new THREE.MeshBasicMaterial({ color: 0x1c1917 });
+
+      // 1. Chibi Torpedo Body
+      const bodyGeo = new THREE.SphereGeometry(0.24, 12, 10);
+      bodyGeo.scale(0.5, 0.45, 1.15); // Elongated plump body
+      const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+      bodyMesh.castShadow = true;
+      fishGroup.add(bodyMesh);
+
+      // 2. Pale Underbelly Accent
+      const bellyGeo = new THREE.SphereGeometry(0.22, 10, 8);
+      bellyGeo.scale(0.44, 0.28, 0.9);
+      const bellyMat = new THREE.MeshLambertMaterial({ color: palette.belly });
+      const bellyMesh = new THREE.Mesh(bellyGeo, bellyMat);
+      bellyMesh.position.set(0, -0.06, 0.02);
+      fishGroup.add(bellyMesh);
+
+      // 3. Cute Cartoon Eyes (Left & Right)
+      const eyeGeo = new THREE.SphereGeometry(0.048, 8, 8);
+      const pupilGeo = new THREE.SphereGeometry(0.024, 8, 8);
+
+      // Left Eye
+      const eyeL = new THREE.Mesh(eyeGeo, eyeWhiteMat);
+      eyeL.position.set(0.11, 0.05, 0.18);
+      const pupilL = new THREE.Mesh(pupilGeo, pupilMat);
+      pupilL.position.set(0.125, 0.05, 0.2);
+      fishGroup.add(eyeL);
+      fishGroup.add(pupilL);
+
+      // Right Eye
+      const eyeR = new THREE.Mesh(eyeGeo, eyeWhiteMat);
+      eyeR.position.set(-0.11, 0.05, 0.18);
+      const pupilR = new THREE.Mesh(pupilGeo, pupilMat);
+      pupilR.position.set(-0.125, 0.05, 0.2);
+      fishGroup.add(eyeR);
+      fishGroup.add(pupilR);
+
+      // 4. Dorsal Fin (Top fin)
+      const dorsalGeo = new THREE.ConeGeometry(0.1, 0.25, 3);
+      dorsalGeo.scale(0.15, 1.0, 1.2);
+      const dorsalMesh = new THREE.Mesh(dorsalGeo, finMat);
+      dorsalMesh.rotation.x = -0.5;
+      dorsalMesh.position.set(0, 0.14, -0.05);
+      fishGroup.add(dorsalMesh);
+
+      // 5. Side Pectoral Fins (Fluttering fins)
+      const pectGeo = new THREE.BoxGeometry(0.12, 0.02, 0.14);
+      const pectL = new THREE.Mesh(pectGeo, finMat);
+      pectL.position.set(0.13, -0.02, 0.05);
+      pectL.rotation.set(0.2, 0, 0.5);
+      fishGroup.add(pectL);
+
+      const pectR = new THREE.Mesh(pectGeo, finMat);
+      pectR.position.set(-0.13, -0.02, 0.05);
+      pectR.rotation.set(0.2, 0, -0.5);
+      fishGroup.add(pectR);
+
+      // 6. Tail Fin with Pivot (for realistic tail wagging)
+      const tailPivot = new THREE.Group();
+      tailPivot.position.set(0, 0, -0.25); // Hinge position at posterior
+
+      const tailGeo = new THREE.ConeGeometry(0.18, 0.32, 3);
+      tailGeo.scale(0.08, 1.1, 1.0);
+      const tailMesh = new THREE.Mesh(tailGeo, finMat);
+      tailMesh.rotation.x = -Math.PI / 2;
+      tailMesh.position.set(0, 0, -0.14);
+      tailPivot.add(tailMesh);
+      fishGroup.add(tailPivot);
+
+      // Randomize river initial spawn location inside river bounds
+      const spawnX = (Math.random() - 0.5) * 18.0;
+      const spawnZ = (Math.random() - 0.5) * 4.6;
+      // Below river surface (-0.4) so they swim clearly inside the crystal-clear water
+      const spawnY = -0.32 + (Math.random() - 0.5) * 0.16;
+
+      const scale = 0.85 + Math.random() * 0.45; // Varying cute sizes
+      fishGroup.scale.set(scale, scale, scale);
+      fishGroup.position.set(spawnX, spawnY, spawnZ);
+
+      const heading = Math.random() * Math.PI * 2;
+      fishGroup.rotation.y = heading;
+
+      // Assign AI swimming attributes
+      fishGroup.userData = {
+        tailPivot: tailPivot,
+        speed: 0.016 + Math.random() * 0.018,
+        heading: heading,
+        turnRate: (Math.random() - 0.5) * 0.02,
+        tailWagSpeed: 10 + Math.random() * 6,
+        phaseOffset: Math.random() * Math.PI * 2,
+        baseY: spawnY,
+        bobSpeed: 1.5 + Math.random() * 1.5,
+        targetStoneDist: 1.1 // Avoid collision with stepping stone columns
+      };
+
+      scene.add(fishGroup);
+      swimmingFishList.push(fishGroup);
+    }
+  }
+
+  function buildChibiExplorer() {
+    explorerMesh = new THREE.Group();
+
+    // Body (Safari Tunic)
+    const bodyGeo = new THREE.CylinderGeometry(0.35, 0.5, 0.75, 14);
+    const bodyMat = new THREE.MeshLambertMaterial({ color: 0xca8a04 }); // Khaki/Amber
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.position.y = 0.5;
+    body.castShadow = true;
+    explorerMesh.add(body);
+
+    // Chibi Head (Chubby Sphere)
+    const headGeo = new THREE.SphereGeometry(0.5, 16, 16);
+    const headMat = new THREE.MeshStandardMaterial({ color: 0xfcd34d, roughness: 0.5 });
+    const head = new THREE.Mesh(headGeo, headMat);
+    head.position.y = 1.15;
+    head.castShadow = true;
+    explorerMesh.add(head);
+
+    // Safari Hat Brim & Dome
+    const hatBrimGeo = new THREE.CylinderGeometry(0.85, 0.9, 0.08, 16);
+    const hatMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.6 });
+    const hatBrim = new THREE.Mesh(hatBrimGeo, hatMat);
+    hatBrim.position.y = 1.45;
+    explorerMesh.add(hatBrim);
+
+    const hatTopGeo = new THREE.SphereGeometry(0.48, 14, 14);
+    const hatTop = new THREE.Mesh(hatTopGeo, hatMat);
+    hatTop.position.y = 1.6;
+    hatTop.scale.set(1, 0.7, 1);
+    explorerMesh.add(hatTop);
+
+    // Cute Backpack
+    const packGeo = new THREE.BoxGeometry(0.4, 0.5, 0.25);
+    const packMat = new THREE.MeshLambertMaterial({ color: 0x15803d });
+    const pack = new THREE.Mesh(packGeo, packMat);
+    pack.position.set(0, 0.6, 0.4);
+    explorerMesh.add(pack);
+
+    // Starting Position: On South Riverbank right at water edge (Facing North)
+    explorerMesh.position.set(0, 0.4, 3.8);
+    explorerMesh.rotation.y = Math.PI; // Face north towards river
+    scene.add(explorerMesh);
+  }
+
+  function buildCheeringMonkeys() {
+    // Positioned wider apart to guarantee full visibility without HUD overlap
+    const monkeyPositions = [
+      { x: -3.0, z: -4.8, rot: 0.28 },
+      { x: 3.0, z: -4.8, rot: -0.28 }
+    ];
+
+    monkeyMeshes = [];
+    monkeyPositions.forEach((pos) => {
+      const monkey = new THREE.Group();
+      const furMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 });
+      const faceMat = new THREE.MeshLambertMaterial({ color: 0xfde047 });
+
+      // Body
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.4, 12, 12), furMat);
+      body.position.y = 0.4;
+      monkey.add(body);
+
+      // Head
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 14, 14), furMat);
+      head.position.y = 0.9;
+      monkey.add(head);
+
+      // Face Muzzle
+      const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 10), faceMat);
+      muzzle.position.set(0, 0.85, 0.2);
+      muzzle.scale.set(1, 0.8, 0.8);
+      monkey.add(muzzle);
+
+      // Cute Ears
+      const earGeo = new THREE.SphereGeometry(0.12, 8, 8);
+      const earL = new THREE.Mesh(earGeo, furMat);
+      earL.position.set(-0.35, 1.0, 0);
+      const earR = new THREE.Mesh(earGeo, furMat);
+      earR.position.set(0.35, 1.0, 0);
+      monkey.add(earL);
+      monkey.add(earR);
+
+      // Cheering Upraised Arms
+      const armGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.45, 8);
+      const armL = new THREE.Mesh(armGeo, furMat);
+      armL.position.set(-0.38, 0.65, 0);
+      armL.rotation.z = 0.9;
+      const armR = new THREE.Mesh(armGeo, furMat);
+      armR.position.set(0.38, 0.65, 0);
+      armR.rotation.z = -0.9;
+      monkey.add(armL);
+      monkey.add(armR);
+
+      monkey.position.set(pos.x, 0.4, pos.z);
+      monkey.rotation.y = pos.rot;
+      scene.add(monkey);
+      monkeyMeshes.push(monkey);
+    });
+  }
+
+  function createSteppingStones3D() {
+    // 3 Realistic Stepping Stones aligned directly ahead of explorer at step 1
+    const stoneXCoords = [-2.4, 0, 2.4];
+    stones3D = [];
+    const initialZ = 2.14; // Directly in front of explorer (Z = 3.8)
+
+    stoneXCoords.forEach((x, index) => {
+      const stoneGroup = new THREE.Group();
+
+      // 1. Organic deformed boulder (River Rock shape)
+      const stoneGeo = new THREE.CylinderGeometry(1.05, 1.35, 0.55, 18, 3);
+      const posAttr = stoneGeo.attributes.position;
+      for (let i = 0; i < posAttr.count; i++) {
+        const vx = posAttr.getX(i);
+        const vy = posAttr.getY(i);
+        const vz = posAttr.getZ(i);
+        const angle = Math.atan2(vz, vx);
+        const radiusNoise = 1.0 + Math.sin(angle * 3 + index) * 0.12 + Math.cos(angle * 5) * 0.06;
+        posAttr.setX(i, vx * radiusNoise);
+        posAttr.setZ(i, vz * radiusNoise);
+        if (vy > 0) {
+          posAttr.setY(i, vy - Math.sqrt(vx * vx + vz * vz) * 0.08);
+        }
+      }
+      stoneGeo.computeVertexNormals();
+
+      const stoneMat = new THREE.MeshStandardMaterial({
+        color: 0x57534e,
+        roughness: 0.78,
+        metalness: 0.12,
+        flatShading: false
+      });
+      const rockMesh = new THREE.Mesh(stoneGeo, stoneMat);
+      rockMesh.castShadow = true;
+      rockMesh.receiveShadow = true;
+      stoneGroup.add(rockMesh);
+
+      // 2. Realistic River Moss Patch
+      const mossGeo = new THREE.SphereGeometry(0.35, 8, 6);
+      mossGeo.scale(1.2, 0.25, 0.8);
+      const mossMat = new THREE.MeshLambertMaterial({ color: 0x3f6212 });
+      const mossMesh = new THREE.Mesh(mossGeo, mossMat);
+      mossMesh.position.set(0.65, 0.15, 0.4);
+      mossMesh.rotation.z = 0.2;
+      stoneGroup.add(mossMesh);
+
+      // 3. Water foam ripple ring
+      const foamGeo = new THREE.RingGeometry(1.25, 1.6, 24);
+      const foamMat = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.45,
+        side: THREE.DoubleSide
+      });
+      const foamMesh = new THREE.Mesh(foamGeo, foamMat);
+      foamMesh.rotation.x = -Math.PI / 2;
+      foamMesh.position.y = -0.15;
+      stoneGroup.add(foamMesh);
+
+      // 4. Carved Stone Inscription Disc on top
+      const discGeo = new THREE.CylinderGeometry(0.82, 0.82, 0.05, 24);
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const texture = new THREE.CanvasTexture(canvas);
+
+      const discMat = new THREE.MeshStandardMaterial({
+        map: texture,
+        transparent: true,
+        roughness: 0.65,
+        metalness: 0.1
+      });
+      const disc = new THREE.Mesh(discGeo, discMat);
+      disc.position.y = 0.28;
+      stoneGroup.add(disc);
+
+      stoneGroup.position.set(x, 0.08, initialZ);
+      stoneGroup.userData = {
+        index: index,
+        canvas: canvas,
+        texture: texture,
+        targetY: 0.08,
+        wobble: 0,
+        val: 0,
+        rockMesh: rockMesh,
+        foamMesh: foamMesh
+      };
+
+      scene.add(stoneGroup);
+      stones3D.push(stoneGroup);
+    });
+  }
+
+  // Draw crisp, natural chiseled stone relief numbers and pebble textures
+  function updateStoneTexture(stoneIndex, valueText, dotCount = 0) {
+    const stone = stones3D[stoneIndex];
+    if (!stone) return;
+    const canvas = stone.userData.canvas;
+    const ctx = canvas.getContext('2d');
+    const sz = 256;
+
+    ctx.clearRect(0, 0, sz, sz);
+
+    // Natural stone surface circle with weathered edge
+    ctx.beginPath();
+    ctx.arc(sz / 2, sz / 2, sz / 2 - 10, 0, Math.PI * 2);
+    
+    // Stone gradient (slate grey with warm granite undertone)
+    const stoneGrad = ctx.createRadialGradient(sz * 0.38, sz * 0.35, 10, sz / 2, sz / 2, sz / 2);
+    stoneGrad.addColorStop(0, '#78716c');
+    stoneGrad.addColorStop(0.7, '#57534e');
+    stoneGrad.addColorStop(1, '#292524');
+    ctx.fillStyle = stoneGrad;
+    ctx.fill();
+
+    // Natural Stone Rim (weathered bevel)
+    ctx.lineWidth = 10;
+    ctx.strokeStyle = '#a8a29e';
+    ctx.stroke();
+
+    // Subtle granite grain flecks
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+    for (let f = 0; f < 35; f++) {
+      const fx = Math.random() * (sz - 40) + 20;
+      const fy = Math.random() * (sz - 40) + 20;
+      ctx.fillRect(fx, fy, 2.5, 2.5);
+    }
+
+    // Moss accent at edge
+    ctx.beginPath();
+    ctx.arc(sz * 0.78, sz * 0.76, 26, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(74, 222, 128, 0.35)';
+    ctx.fill();
+
+    // Chiseled Engraved Numeral / Counting Dots
+    if (dotCount > 0 && dotCount <= 5) {
+      // Natural River Pearl Dots
+      const dotCoords = {
+        1: [[128, 128]],
+        2: [[90, 128], [166, 128]],
+        3: [[80, 150], [176, 150], [128, 85]],
+        4: [[90, 90], [166, 90], [90, 166], [166, 166]],
+        5: [[80, 80], [176, 80], [128, 128], [80, 176], [176, 176]]
+      }[dotCount] || [[128, 128]];
+
+      dotCoords.forEach(([dx, dy]) => {
+        // Deep carved shadow
+        ctx.beginPath();
+        ctx.arc(dx + 2, dy + 3, 21, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+        ctx.fill();
+
+        // Glowing river jade dot
+        ctx.beginPath();
+        ctx.arc(dx, dy, 20, 0, Math.PI * 2);
+        const jadeGrad = ctx.createRadialGradient(dx - 5, dy - 5, 2, dx, dy, 20);
+        jadeGrad.addColorStop(0, '#86efac');
+        jadeGrad.addColorStop(1, '#15803d');
+        ctx.fillStyle = jadeGrad;
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#fef08a';
+        ctx.stroke();
+      });
+
+      // Engraved small numeral above
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.font = '800 44px Quicksand, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(valueText, 128 + 2, 44 + 2); // Shadow
+
+      ctx.fillStyle = '#fef08a';
+      ctx.fillText(valueText, 128, 44);
+    } else {
+      // Deep Chiseled Relief for Numeral
+      ctx.font = '800 115px Quicksand, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      // Inner shadow (chiseled depth)
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillText(valueText, sz / 2 + 3, sz / 2 + 11);
+
+      // Engraved golden-amber inscription fill
+      const textGrad = ctx.createLinearGradient(0, sz / 2 - 40, 0, sz / 2 + 40);
+      textGrad.addColorStop(0, '#fef08a');
+      textGrad.addColorStop(0.5, '#f59e0b');
+      textGrad.addColorStop(1, '#d97706');
+      ctx.fillStyle = textGrad;
+      ctx.fillText(valueText, sz / 2, sz / 2 + 7);
+
+      // Chisel top highlight edge
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeText(valueText, sz / 2, sz / 2 + 7);
+    }
+
+    stone.userData.texture.needsUpdate = true;
+    stone.userData.val = valueText;
+  }
+
+  function generateQuestion() {
+    const isTier1 = state.tier === 1;
+    let question = {
+      type: '', // 'dots' | 'seq' | 'sum'
+      correctAnswer: 0,
+      options: [],
+      dots: 0,
+      params: {}
+    };
+
+    if (isTier1) {
+      // Tier 1 (Ages 3-4): Numbers 1-5, Counting friendly dots
+      const targetNum = Math.floor(Math.random() * 5) + 1;
+      question.type = 'dots';
+      question.correctAnswer = targetNum;
+      question.dots = targetNum;
+      question.params = { num: targetNum };
+
+      // Distractors
+      const pool = [1, 2, 3, 4, 5].filter(n => n !== targetNum);
+      pool.sort(() => Math.random() - 0.5);
+      question.options = [targetNum, pool[0], pool[1]].sort(() => Math.random() - 0.5);
+
+    } else {
+      // Tier 2 (Ages 5-6): Number Sequences or simple friendly additions (sum <= 10)
+      const isSequence = Math.random() > 0.4;
+
+      if (isSequence) {
+        const step = Math.random() > 0.5 ? 2 : 1;
+        const start = Math.floor(Math.random() * 4) + 1;
+        const n1 = start;
+        const n2 = start + step;
+        const n3 = start + step * 2;
+        const ans = start + step * 3;
+
+        question.type = 'seq';
+        question.correctAnswer = ans;
+        question.params = { n1, n2, n3, seq: `${n1}, ${n2}, ${n3}` };
+
+        const d1 = ans + (Math.random() > 0.5 ? 1 : -1) || (ans + 2);
+        const d2 = ans + (step === 1 ? 2 : 1);
+        const distractors = [d1, d2].filter(d => d !== ans && d > 0);
+        while (distractors.length < 2) distractors.push(ans + 3);
+
+        question.options = [ans, distractors[0], distractors[1]].sort(() => Math.random() - 0.5);
+      } else {
+        // Simple Addition: a + b
+        const a = Math.floor(Math.random() * 4) + 1;
+        const b = Math.floor(Math.random() * 4) + 1;
+        const ans = a + b;
+
+        question.type = 'sum';
+        question.correctAnswer = ans;
+        question.params = { a, b };
+
+        const d1 = Math.max(1, ans + (Math.random() > 0.5 ? 1 : -1));
+        const d2 = ans + 2;
+        question.options = [ans, d1 !== ans ? d1 : ans + 3, d2].sort(() => Math.random() - 0.5);
+      }
+    }
+
+    state.currentQuestion = question;
+    renderQuestionToUI();
+  }
+
+  function speakCurrentQuestion() {
+    if (!state.soundEnabled) return;
+    const q = state.currentQuestion;
+    if (!q) return;
+
+    let textToSpeak = "";
+    if (state.lang === 'bm') {
+      if (q.type === 'dots') {
+        textToSpeak = `Pilih nombor ${q.params.num}`;
+      } else if (q.type === 'seq') {
+        textToSpeak = `Apakah nombor seterusnya? ${q.params.n1}, ${q.params.n2}, ${q.params.n3}`;
+      } else if (q.type === 'sum') {
+        textToSpeak = `${q.params.a} tambah ${q.params.b} sama dengan berapa?`;
+      }
+    } else {
+      if (q.type === 'dots') {
+        textToSpeak = `Pick number ${q.params.num}`;
+      } else if (q.type === 'seq') {
+        textToSpeak = `What is the next number? ${q.params.n1}, ${q.params.n2}, ${q.params.n3}`;
+      } else if (q.type === 'sum') {
+        textToSpeak = `What is ${q.params.a} plus ${q.params.b}?`;
+      }
+    }
+
+    if ('speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(textToSpeak);
+        utter.rate = 0.88; // Slightly deliberate for preschool children
+        utter.pitch = 1.15; // Cheerful friendly tone
+
+        const voices = window.speechSynthesis.getVoices();
+        const targetLang = state.lang === 'bm' ? 'ms' : 'en';
+        const voice = voices.find(v => v.lang.toLowerCase().startsWith(targetLang)) ||
+                      (state.lang === 'bm' ? voices.find(v => v.lang.toLowerCase().startsWith('id')) : null) ||
+                      voices.find(v => v.lang.toLowerCase().startsWith('en'));
+        if (voice) utter.voice = voice;
+        utter.lang = state.lang === 'bm' ? 'ms-MY' : 'en-US';
+
+        const speakerBtn = document.getElementById('voice-speak-btn');
+        utter.onstart = () => {
+          if (speakerBtn) speakerBtn.classList.add('ring-4', 'ring-amber-300', 'scale-105');
+        };
+        utter.onend = utter.onerror = () => {
+          if (speakerBtn) speakerBtn.classList.remove('ring-4', 'ring-amber-300', 'scale-105');
+        };
+
+        window.speechSynthesis.speak(utter);
+      } catch (err) {
+        console.warn("SpeechSynthesis error:", err);
+      }
+    }
+  }
+
+  function renderQuestionToUI() {
+    const q = state.currentQuestion;
+    if (!q) return;
+
+    const t = I18N[state.lang];
+    let promptHtml = "";
+    let visualHtml = "";
+
+    if (q.type === 'dots') {
+      promptHtml = t.promptCountDots(q.params.num);
+      let dotsSvg = '';
+      for (let i = 0; i < q.params.num; i++) {
+        dotsSvg += `
+          <svg class="w-6 h-6 sm:w-7 sm:h-7 drop-shadow transform transition-transform hover:scale-110 flex-shrink-0" viewBox="0 0 36 36">
+            <circle cx="18" cy="18" r="16" fill="#34D399" stroke="#059669" stroke-width="3"/>
+            <path d="M18 6 C24 12 24 24 18 30 C12 24 12 12 18 6 Z" fill="#10B981"/>
+          </svg>`;
+      }
+      visualHtml = dotsSvg;
+    } else if (q.type === 'seq') {
+      promptHtml = t.promptNextNumber(q.params.seq);
+      visualHtml = `
+        <div class="flex items-center gap-1 sm:gap-1.5">
+          <span class="px-2 py-1 bg-emerald-100 border border-emerald-400 rounded-lg font-black text-emerald-950 text-xs sm:text-sm">${q.params.n1}</span>
+          <span class="text-emerald-600 font-bold text-xs">→</span>
+          <span class="px-2 py-1 bg-emerald-100 border border-emerald-400 rounded-lg font-black text-emerald-950 text-xs sm:text-sm">${q.params.n2}</span>
+          <span class="text-emerald-600 font-bold text-xs">→</span>
+          <span class="px-2 py-1 bg-emerald-100 border border-emerald-400 rounded-lg font-black text-emerald-950 text-xs sm:text-sm">${q.params.n3}</span>
+          <span class="text-amber-600 font-bold text-xs">→</span>
+          <span class="px-2 py-1 bg-amber-200 border border-amber-500 rounded-lg font-black text-amber-950 text-xs sm:text-sm">?</span>
+        </div>`;
+    } else if (q.type === 'sum') {
+      promptHtml = t.promptSum(q.params.a, q.params.b);
+      visualHtml = `
+        <div class="flex items-center gap-1.5 text-stone-900 font-black text-sm sm:text-base">
+          <span class="px-2 py-1 bg-amber-100 border border-amber-400 rounded-lg text-amber-950">${q.params.a}</span>
+          <span class="text-amber-600 text-sm font-black">+</span>
+          <span class="px-2 py-1 bg-amber-100 border border-amber-400 rounded-lg text-amber-950">${q.params.b}</span>
+          <span class="text-stone-500 text-sm font-black">=</span>
+          <span class="px-2 py-1 bg-emerald-100 border border-emerald-400 rounded-lg text-emerald-950">?</span>
+        </div>`;
+    }
+
+    // Update Step counter and Question text
+    document.getElementById('hud-progress-label').textContent = t.hudStep;
+    document.getElementById('question-prompt').innerHTML = promptHtml;
+    document.getElementById('question-visual').innerHTML = visualHtml;
+
+    const voiceBtn = document.getElementById('voice-speak-btn');
+    if (voiceBtn) voiceBtn.title = t.listenVoice;
+
+    // Update 3D Stepping Stones and Touch Bar
+    q.options.forEach((val, idx) => {
+      // 3D Texture
+      const dots = (state.tier === 1 && val === q.dots) ? val : 0;
+      updateStoneTexture(idx, val.toString(), dots);
+
+      // DOM Touch Bar Buttons
+      const btn = document.querySelector(`.stone-touch-btn[data-index="${idx}"]`);
+      if (btn) {
+        btn.querySelector('.stone-val').textContent = val;
+        btn.querySelector('span:last-child').textContent = `${t.stonePrefix} ${String.fromCharCode(65 + idx)}`;
+      }
+    });
+
+    renderProgressDots();
+
+    // Trigger AI speech narration for the new question
+    speakCurrentQuestion();
+  }
+
+  function renderProgressDots() {
+    const dotsContainer = document.getElementById('progress-dots');
+    dotsContainer.innerHTML = '';
+    for (let i = 0; i < state.totalSteps; i++) {
+      const active = i < state.stepIndex;
+      const isCurrent = i === state.stepIndex;
+      const dot = document.createElement('div');
+      dot.className = `w-3 h-3 rounded-full transition-all duration-300 ${
+        active 
+          ? 'bg-emerald-500 scale-110 shadow-sm' 
+          : isCurrent 
+            ? 'bg-amber-400 animate-ping ring-2 ring-amber-300' 
+            : 'bg-stone-300'
+      }`;
+      dotsContainer.appendChild(dot);
+    }
+  }
+
+  function handleSelectStone(chosenIndex) {
+    if (state.isAnimatingJump || state.gameOver) return;
+
+    const chosenStone = stones3D[chosenIndex];
+    const chosenVal = chosenStone.userData.val;
+    const isCorrect = parseInt(chosenVal) === state.currentQuestion.correctAnswer;
+
+    if (isCorrect) {
+      // Successful Jump to stone
+      state.isAnimatingJump = true;
+      audio.playChime(659.25, 0.35); // Joyful step chime
+      audio.playWaterSplash();
+      showFeedbackToast(true);
+
+      // Calculate Target Z for this step across the river: from Z=3.8 down to Z=-4.5
+      const stepZ = 3.8 - ((state.stepIndex + 1) * (8.3 / (state.totalSteps + 1)));
+      const targetStonePos = new THREE.Vector3(chosenStone.position.x, 0.45, stepZ);
+
+      // Move chosen stone to position ahead
+      chosenStone.position.z = stepZ;
+
+      // Animate Explorer joyful leap arc
+      animateExplorerLeap(targetStonePos, () => {
+        state.stepIndex++;
+        renderProgressDots();
+
+        // Check if finished crossing
+        if (state.stepIndex >= state.totalSteps) {
+          // Cross completely to far bank!
+          finishCrossingRiver();
+        } else {
+          // Prepare next challenge and advance remaining stones
+          const nextStepZ = 3.8 - ((state.stepIndex + 1) * (8.3 / (state.totalSteps + 1)));
+          stones3D.forEach(st => {
+            if (st !== chosenStone) {
+              st.position.z = nextStepZ;
+            }
+          });
+          state.isAnimatingJump = false;
+          generateQuestion();
+        }
+      });
+
+    } else {
+      // Friendly wobble with no penalty
+      audio.playBoing();
+      showFeedbackToast(false);
+      chosenStone.userData.wobble = 1.0;
+    }
+  }
+
+  // Chibi Explorer Jump Arc Animation (Squash and Stretch)
+  function animateExplorerLeap(targetVec, onComplete) {
+    const startPos = explorerMesh.position.clone();
+    const duration = 650; // ms
+    const startTime = performance.now();
+
+    function stepJump(currentTime) {
+      const elapsed = currentTime - startTime;
+      const p = Math.min(elapsed / duration, 1.0);
+      // Smooth easeInOutQuad
+      const ease = p < 0.5 ? 2 * p * p : -1 + (4 - 2 * p) * p;
+
+      // Interpolate horizontal
+      explorerMesh.position.x = startPos.x + (targetVec.x - startPos.x) * ease;
+      explorerMesh.position.z = startPos.z + (targetVec.z - startPos.z) * ease;
+
+      // Parabolic jump arc with peak height 1.8
+      const arc = Math.sin(p * Math.PI) * 1.8;
+      explorerMesh.position.y = startPos.y + (targetVec.y - startPos.y) * ease + arc;
+
+      // Squash and stretch
+      if (p < 0.2) {
+        explorerMesh.scale.set(1.2, 0.8, 1.2); // prep squash
+      } else if (p < 0.8) {
+        explorerMesh.scale.set(0.9, 1.25, 0.9); // airborne stretch
+      } else {
+        explorerMesh.scale.set(1.15, 0.85, 1.15); // landing squash
+      }
+
+      if (p < 1.0) {
+        requestAnimationFrame(stepJump);
+      } else {
+        explorerMesh.scale.set(1, 1, 1);
+        if (onComplete) onComplete();
+      }
+    }
+    requestAnimationFrame(stepJump);
+  }
+
+  // Cross to celebratory monkey camp
+  function finishCrossingRiver() {
+    const finalBankPos = new THREE.Vector3(0, 0.4, -4.5);
+    animateExplorerLeap(finalBankPos, () => {
+      state.gameOver = true;
+      state.isAnimatingJump = false;
+
+      // Audio celebration
+      audio.playMonkeyCheer();
+      setTimeout(() => {
+        audio.playVictoryFanfare();
+      }, 350);
+
+      // Trigger celebratory dance in monkeys
+      monkeyMeshes.forEach(m => m.userData.dancing = true);
+
+      // Open Victory Modal
+      setTimeout(() => {
+        const modal = document.getElementById('victory-modal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+          modal.classList.remove('opacity-0');
+        }, 30);
+      }, 700);
+    });
+  }
+
+  // Friendly encouragement feedback toast (positioned right above stone buttons)
+  function showFeedbackToast(isPositive) {
+    const toast = document.getElementById('feedback-toast');
+    const list = isPositive ? I18N[state.lang].correctToast : I18N[state.lang].wrongToast;
+    const msg = list[Math.floor(Math.random() * list.length)];
+
+    toast.textContent = msg;
+    toast.className = `absolute bottom-24 sm:bottom-28 left-1/2 -translate-x-1/2 z-20 px-4 py-1.5 rounded-full font-black text-xs sm:text-sm text-white shadow-xl transition-all duration-300 transform translate-y-0 opacity-100 whitespace-nowrap pointer-events-none ${
+      isPositive ? 'bg-gradient-to-r from-emerald-500 to-green-600' : 'bg-gradient-to-r from-amber-500 to-orange-500'
+    }`;
+
+    setTimeout(() => {
+      toast.classList.add('opacity-0');
+      toast.classList.add('translate-y-2');
+    }, 1200);
+  }
+
+  function onCanvasPointerDown(event) {
+    if (state.isAnimatingJump || state.gameOver) return;
+
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+
+    // Check hit against stone meshes
+    const targets = [];
+    stones3D.forEach(stoneGroup => {
+      stoneGroup.traverse(child => {
+        if (child.isMesh) {
+          child.userData.parentStone = stoneGroup;
+          targets.push(child);
+        }
+      });
+    });
+
+    const intersects = raycaster.intersectObjects(targets);
+    if (intersects.length > 0) {
+      const hitStone = intersects[0].object.userData.parentStone;
+      if (hitStone && hitStone.userData.index !== undefined) {
+        handleSelectStone(hitStone.userData.index);
+      }
+    }
+  }
+
+  function setupUIEventListeners() {
+    // Bilingual Switcher (Header)
+    const bmBtn = document.getElementById('lang-bm-btn');
+    const enBtn = document.getElementById('lang-en-btn');
+    if (bmBtn) bmBtn.addEventListener('click', () => setLanguage('bm'));
+    if (enBtn) enBtn.addEventListener('click', () => setLanguage('en'));
+
+    // Bilingual Switcher (Front Page Card)
+    const cardBmBtn = document.getElementById('card-lang-bm-btn');
+    const cardEnBtn = document.getElementById('card-lang-en-btn');
+    if (cardBmBtn) cardBmBtn.addEventListener('click', () => setLanguage('bm'));
+    if (cardEnBtn) cardEnBtn.addEventListener('click', () => setLanguage('en'));
+
+    // Home / Main Menu Button
+    document.getElementById('home-btn').addEventListener('click', returnToMainMenu);
+
+    // Sound Toggle
+    const soundBtn = document.getElementById('sound-btn');
+    soundBtn.addEventListener('click', () => {
+      state.soundEnabled = !state.soundEnabled;
+      document.getElementById('sound-icon-on').classList.toggle('hidden', !state.soundEnabled);
+      document.getElementById('sound-icon-off').classList.toggle('hidden', state.soundEnabled);
+      if (state.soundEnabled) audio.playChime(700, 0.15);
+    });
+
+    // Tier Selectors
+    const tier1Btn = document.getElementById('tier-1-btn');
+    const tier2Btn = document.getElementById('tier-2-btn');
+
+    tier1Btn.addEventListener('click', () => selectTier(1));
+    tier2Btn.addEventListener('click', () => selectTier(2));
+
+    // Start Button
+    document.getElementById('start-game-btn').addEventListener('click', startGame);
+
+    // AI Voice Narration Replay Button
+    const voiceBtn = document.getElementById('voice-speak-btn');
+    if (voiceBtn) voiceBtn.addEventListener('click', () => speakCurrentQuestion());
+
+    // Pre-load voices for speech synthesis
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+    }
+
+    // Stone Touch Bar Taps
+    document.querySelectorAll('.stone-touch-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(btn.getAttribute('data-index'));
+        handleSelectStone(idx);
+      });
+    });
+
+    // Victory Screen Buttons
+    document.getElementById('play-again-btn').addEventListener('click', resetGame);
+    document.getElementById('change-tier-btn').addEventListener('click', returnToMainMenu);
+  }
+
+  function returnToMainMenu() {
+    audio.playChime(520, 0.15);
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    // Hide game HUD, touch bar, and victory modal
+    document.getElementById('game-hud').classList.add('opacity-0');
+    document.getElementById('stone-touch-bar').classList.add('opacity-0');
+    const modal = document.getElementById('victory-modal');
+    modal.classList.add('opacity-0');
+    setTimeout(() => modal.classList.add('hidden'), 250);
+
+    // Show Front Page
+    const frontPage = document.getElementById('front-page');
+    frontPage.classList.remove('hidden');
+    setTimeout(() => frontPage.classList.remove('opacity-0'), 30);
+
+    // Reset game state and explorer position back to riverbank
+    state.stepIndex = 0;
+    state.gameOver = false;
+    state.isAnimatingJump = false;
+    if (explorerMesh) {
+      explorerMesh.position.set(0, 0.4, 3.8);
+      explorerMesh.rotation.y = Math.PI;
+      explorerMesh.scale.set(1, 1, 1);
+    }
+    const stoneXCoords = [-2.4, 0, 2.4];
+    const initialZ = 2.14;
+    stones3D.forEach((st, idx) => {
+      st.position.set(stoneXCoords[idx], 0.08, initialZ);
+      st.userData.wobble = 0;
+    });
+    monkeyMeshes.forEach(m => m.userData.dancing = false);
+  }
+
+  function setLanguage(lang) {
+    state.lang = lang;
+    const t = I18N[lang];
+    if (audio) audio.playChime(620, 0.12);
+
+    // Toggle active style on flags for both Header and Front Page Card
+    const bmBtn = document.getElementById('lang-bm-btn');
+    const enBtn = document.getElementById('lang-en-btn');
+    const cardBmBtn = document.getElementById('card-lang-bm-btn');
+    const cardEnBtn = document.getElementById('card-lang-en-btn');
+
+    const activeHeaderCls = "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl font-bold text-xs sm:text-sm transition-all bg-amber-500 text-white shadow-inner";
+    const inactiveHeaderCls = "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl font-bold text-xs sm:text-sm transition-all text-amber-900 hover:bg-amber-50";
+
+    const activeCardCls = "flex items-center gap-1.5 px-3 py-1 rounded-lg font-extrabold text-xs transition-all bg-amber-500 text-white shadow-inner";
+    const inactiveCardCls = "flex items-center gap-1.5 px-3 py-1 rounded-lg font-extrabold text-xs transition-all text-amber-900 hover:bg-amber-50";
+
+    if (lang === 'bm') {
+      if (bmBtn) bmBtn.className = activeHeaderCls;
+      if (enBtn) enBtn.className = inactiveHeaderCls;
+      if (cardBmBtn) cardBmBtn.className = activeCardCls;
+      if (cardEnBtn) cardEnBtn.className = inactiveCardCls;
+    } else {
+      if (enBtn) enBtn.className = activeHeaderCls;
+      if (bmBtn) bmBtn.className = inactiveHeaderCls;
+      if (cardEnBtn) cardEnBtn.className = activeCardCls;
+      if (cardBmBtn) cardBmBtn.className = inactiveCardCls;
+    }
+
+    // Update DOM Texts across all screens
+    const cardLangLabel = document.getElementById('card-lang-label');
+    if (cardLangLabel) cardLangLabel.textContent = t.cardLangLabel;
+
+    document.getElementById('home-btn-text').textContent = t.homeBtn;
+    document.getElementById('brand-title').textContent = t.brandTitle;
+    document.getElementById('landing-title').textContent = t.landingTitle;
+    document.getElementById('landing-subtitle').textContent = t.landingSubtitle;
+    document.getElementById('label-select-tier').textContent = t.selectTier;
+    document.getElementById('tier1-title').textContent = t.tier1Title;
+    document.getElementById('tier1-desc').textContent = t.tier1Desc;
+    document.getElementById('tier2-title').textContent = t.tier2Title;
+    document.getElementById('tier2-desc').textContent = t.tier2Desc;
+    document.getElementById('how-to-play-header').textContent = t.howToHeader;
+    document.getElementById('how-to-play-body').textContent = t.howToBody;
+    document.getElementById('start-btn-text').textContent = t.startBtn;
+    document.getElementById('hud-progress-label').textContent = t.hudStep;
+    document.getElementById('victory-title').textContent = t.victoryTitle;
+    document.getElementById('victory-desc').textContent = t.victoryDesc;
+    document.getElementById('play-again-text').textContent = t.playAgain;
+    document.getElementById('change-tier-text').textContent = t.changeTier;
+
+    // Refresh active question prompt and stone labels immediately
+    if (state.currentQuestion) {
+      renderQuestionToUI();
+    }
+  }
+
+  function selectTier(tierNum) {
+    state.tier = tierNum;
+    const btn1 = document.getElementById('tier-1-btn');
+    const btn2 = document.getElementById('tier-2-btn');
+
+    if (tierNum === 1) {
+      btn1.className = "tier-card p-3 rounded-2xl border-2 border-emerald-500 bg-emerald-50/90 text-left transition-all relative overflow-hidden shadow-sm";
+      btn2.className = "tier-card p-3 rounded-2xl border-2 border-stone-200 bg-white/70 text-left transition-all relative overflow-hidden shadow-sm";
+    } else {
+      btn2.className = "tier-card p-3 rounded-2xl border-2 border-emerald-500 bg-emerald-50/90 text-left transition-all relative overflow-hidden shadow-sm";
+      btn1.className = "tier-card p-3 rounded-2xl border-2 border-stone-200 bg-white/70 text-left transition-all relative overflow-hidden shadow-sm";
+    }
+    audio.playChime(500, 0.1);
+  }
+
+  function startGame() {
+    audio.playChime(600, 0.2);
+    // Hide Front Page, reveal HUD and Touch Bar
+    const frontPage = document.getElementById('front-page');
+    frontPage.classList.add('opacity-0');
+    setTimeout(() => {
+      frontPage.classList.add('hidden');
+      document.getElementById('game-hud').classList.remove('opacity-0');
+      document.getElementById('stone-touch-bar').classList.remove('opacity-0');
+      resetGame();
+    }, 300);
+  }
+
+  function resetGame() {
+    state.stepIndex = 0;
+    state.gameOver = false;
+    state.isAnimatingJump = false;
+
+    // Reset Chibi Explorer position to south bank
+    explorerMesh.position.set(0, 0.4, 3.8);
+    explorerMesh.rotation.y = Math.PI;
+
+    // Reset stones back to first step position directly ahead
+    const stoneXCoords = [-2.4, 0, 2.4];
+    const initialZ = 2.14;
+    stones3D.forEach((st, idx) => {
+      st.position.set(stoneXCoords[idx], 0.08, initialZ);
+      st.userData.wobble = 0;
+    });
+
+    // Hide victory modal
+    const modal = document.getElementById('victory-modal');
+    modal.classList.add('opacity-0');
+    setTimeout(() => modal.classList.add('hidden'), 300);
+
+    generateQuestion();
+  }
+
+  function updateCameraFraming() {
+    const container = document.getElementById('canvas-container');
+    if (!container || !camera) return;
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    const aspect = width / height;
+
+    camera.aspect = aspect;
+
+    if (aspect < 0.6) {
+      // Tall, narrow mobile screens (e.g. iPhone portrait)
+      // Focus camera slightly lower down to center the river action and clear the top
+      camera.fov = 43;
+      camera.position.set(0, 15.0, 10.5);
+      camera.lookAt(0, 0.0, -1.8);
+    } else if (aspect < 0.85) {
+      // Tablet portrait
+      camera.fov = 39;
+      camera.position.set(0, 15.2, 11.2);
+      camera.lookAt(0, -0.1, -1.6);
+    } else {
+      // Desktop / Landscape
+      camera.fov = 34;
+      camera.position.set(0, 14.8, 12.5);
+      camera.lookAt(0, -0.2, -1.2);
+    }
+
+    camera.updateProjectionMatrix();
+    if (renderer) renderer.setSize(width, height);
+  }
+
+  function onWindowResize() {
+    updateCameraFraming();
+  }
+
+  // Smooth Render Loop (Water ripple, stone wobble, monkey cheer idle)
+  function animate() {
+    requestAnimationFrame(animate);
+
+    const time = performance.now() * 0.002;
+
+    // Update Colorful Swimming Fish Behaviors
+    if (swimmingFishList.length > 0) {
+      swimmingFishList.forEach((fish) => {
+        const u = fish.userData;
+
+        // Meandering gentle course drift
+        u.heading += u.turnRate;
+
+        // Soft bounce when reaching riverbanks (Z bounds: -2.7 to 2.7)
+        if (fish.position.z > 2.6 && Math.cos(u.heading) > 0) {
+          u.heading = Math.PI - u.heading + (Math.random() - 0.5) * 0.5;
+        } else if (fish.position.z < -2.6 && Math.cos(u.heading) < 0) {
+          u.heading = Math.PI - u.heading + (Math.random() - 0.5) * 0.5;
+        }
+
+        // River ends boundary loop / turn (X bounds: -10 to 10)
+        if (fish.position.x > 9.8 && Math.sin(u.heading) > 0) {
+          u.heading = -u.heading + (Math.random() - 0.5) * 0.5;
+        } else if (fish.position.x < -9.8 && Math.sin(u.heading) < 0) {
+          u.heading = -u.heading + (Math.random() - 0.5) * 0.5;
+        }
+
+        // Steer slightly away from active stepping stones so they swim around gracefully
+        stones3D.forEach(stone => {
+          const dx = fish.position.x - stone.position.x;
+          const dz = fish.position.z - stone.position.z;
+          const distSq = dx * dx + dz * dz;
+          if (distSq < 1.35) {
+            u.heading += 0.06;
+          }
+        });
+
+        // Translate in heading direction
+        fish.position.x += Math.sin(u.heading) * u.speed;
+        fish.position.z += Math.cos(u.heading) * u.speed;
+
+        // Smoothly orient fish towards its swimming vector
+        fish.rotation.y = u.heading;
+
+        // Gentle vertical bobbing & roll while swimming
+        fish.position.y = u.baseY + Math.sin(time * u.bobSpeed + u.phaseOffset) * 0.035;
+        fish.rotation.z = Math.sin(time * (u.bobSpeed * 0.8) + u.phaseOffset) * 0.08;
+
+        // Natural responsive tail wagging animation
+        if (u.tailPivot) {
+          u.tailPivot.rotation.y = Math.sin(time * u.tailWagSpeed + u.phaseOffset) * 0.48;
+        }
+      });
+    }
+
+    // Water Surface Gentle Undulation
+    if (riverMesh) {
+      riverMesh.position.y = -0.4 + Math.sin(time * 2) * 0.03;
+    }
+
+    // Stepping Stones Floating and Wobble Physics
+    stones3D.forEach((stone, idx) => {
+      // Gentle water bobbing
+      const bob = Math.sin(time * 3 + idx * 1.5) * 0.02;
+      stone.position.y = stone.userData.targetY + bob;
+
+      // Pulse foam ring around stone
+      if (stone.userData.foamMesh) {
+        const foamScale = 1.0 + Math.sin(time * 4 + idx) * 0.08;
+        stone.userData.foamMesh.scale.set(foamScale, foamScale, 1);
+      }
+
+      // Gentle rotational wobble on incorrect tap
+      if (stone.userData.wobble > 0.001) {
+        stone.rotation.z = Math.sin(time * 25) * stone.userData.wobble * 0.15;
+        stone.rotation.x = Math.cos(time * 20) * stone.userData.wobble * 0.1;
+        stone.userData.wobble *= 0.92; // Damping
+      } else {
+        stone.rotation.set(0, 0, 0);
+      }
+    });
+
+    // Monkey Friends Cheering idle animation
+    monkeyMeshes.forEach((monkey, idx) => {
+      if (monkey.userData.dancing || state.gameOver) {
+        monkey.position.y = 0.4 + Math.abs(Math.sin(time * 8 + idx)) * 0.4;
+        monkey.rotation.y = Math.sin(time * 6) * 0.3;
+      } else {
+        monkey.position.y = 0.4 + Math.sin(time * 2 + idx) * 0.04;
+      }
+    });
+
+    renderer.render(scene, camera);
+  }
+
+  window.onload = function() {
+    initThreeScene();
+    setupUIEventListeners();
+    setLanguage('bm'); // Default language BM
+    animate();
+  };
+  </script>
+</body>
+</html>
